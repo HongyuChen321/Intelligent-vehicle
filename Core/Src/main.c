@@ -212,36 +212,36 @@ int main(void)
 				Motor_Right(MOTOR_STOP, 0);
 				HAL_Delay(200);
 				// 前行一段距离
-				Motor_Right(MOTOR_FORWARD, 30);
-				Motor_Left(MOTOR_FORWARD, 30);
-				HAL_Delay(600);
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_STOP, 0);
-				HAL_Delay(200);
-				// 右转90°
-				Motor_Right(MOTOR_STOP, 0);
+				Motor_Right(MOTOR_FORWARD, 50);
 				Motor_Left(MOTOR_FORWARD, 50);
 				HAL_Delay(500);
 				Motor_Right(MOTOR_STOP, 0);
 				Motor_Left(MOTOR_STOP, 0);
 				HAL_Delay(200);
+				// 右转90°
+				Motor_Right(MOTOR_BACKWARD, 40);
+				Motor_Left(MOTOR_FORWARD, 40);
+				HAL_Delay(400);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
 				// 前行一段距离
-				Motor_Right(MOTOR_FORWARD, 30);
-				Motor_Left(MOTOR_FORWARD, 30);
-				HAL_Delay(600);
+				Motor_Right(MOTOR_FORWARD, 50);
+				Motor_Left(MOTOR_FORWARD, 50);
+				HAL_Delay(1000);
 				Motor_Right(MOTOR_STOP, 0);
 				Motor_Left(MOTOR_STOP, 0);
 				HAL_Delay(200);
 				// 右转90°
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_FORWARD, 50);
-				HAL_Delay(500);
+				Motor_Right(MOTOR_BACKWARD, 40);
+				Motor_Left(MOTOR_FORWARD, 40);
+				HAL_Delay(400);
 				Motor_Right(MOTOR_STOP, 0);
 				Motor_Left(MOTOR_STOP, 0);
 				HAL_Delay(200);
 				// 前行一段距离
-				Motor_Right(MOTOR_FORWARD, 30);
-				Motor_Left(MOTOR_FORWARD, 30);
+				Motor_Right(MOTOR_FORWARD, 60);
+				Motor_Left(MOTOR_FORWARD, 60);
 				HAL_Delay(600);
 				Motor_Right(MOTOR_STOP, 0);
 				Motor_Left(MOTOR_STOP, 0);
