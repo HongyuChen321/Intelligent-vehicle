@@ -100,131 +100,156 @@ int main(void)
 	double front_distance = Ultrasonic_GetDistance_FRONT();
 	double max_distance = 20.0;
 	
-	double Kp = 1.0;
+	double Kp = 2.0;
 	double Ki = 0.0;
-	double Kd = 0.0;
+	double Kd = 1.4;
 	
 	int mode = 0;
 	while (1)
 	{
 		switch(mode)
 		{
-			// PIDµ÷ÕûÂ·¾¶
 			case 0:
-				// ¿ØÖÆÖÇÄÜ³µÐÐÊ»ÔÚÃÔ¹¬µÄÕýÖÐÑë£¬Ê¹ÓÃPID¿ØÖÆ
-				double error_prev = 0.0;
-        double error_sum = 0; 
-        uint32_t last_time = 0;
-        double target_distance = 10.0;
-        uint8_t base_speed = 30; 
-        while(1)
-        {
-            right_distance = GetDistance_Right(right_distance);
-            Bluetooth_SendString("right_distance:");
-            Bluetooth_SendDouble(right_distance, 3);
-            
-            double error = target_distance - right_distance;
-            
-            uint32_t current_time = DWT->CYCCNT;
-            double dt = (double)(current_time - last_time) / (SystemCoreClock);
-            
-            if (last_time == 0 || dt <= 0 || dt > 1.0) {
-                dt = 0.01;
-            }
-            double error_diff = (error - error_prev) / dt;
-            
-            error_sum += error * dt;
-            double error_sum_max = 50.0;
-            if (error_sum > error_sum_max) error_sum = error_sum_max;
-            if (error_sum < -error_sum_max) error_sum = -error_sum_max;
-
-            double pid_output = Kp * error + Ki * error_sum + Kd * error_diff;
-            
-            double max_correction = base_speed * 0.8;
-            if (pid_output > max_correction) pid_output = max_correction;
-            if (pid_output < -max_correction) pid_output = -max_correction;
-
-            int left_speed = base_speed + (int)pid_output;
-            int right_speed = base_speed - (int)pid_output;
-            
-            if (left_speed < 0) left_speed = 0;
-            if (right_speed < 0) right_speed = 0;
-            if (left_speed > MAX_SPEED) left_speed = MAX_SPEED;
-            if (right_speed > MAX_SPEED) right_speed = MAX_SPEED;
-            
-						int left_speed1=1.2*left_speed;//fixed motor signal
-            Motor_Left(MOTOR_FORWARD,right_speed );
-            Motor_Right(MOTOR_FORWARD, left_speed1);
-
-            Bluetooth_SendString(" Error:");
-            Bluetooth_SendDouble(error, 2);
-            Bluetooth_SendString(" L:");
-            Bluetooth_SendDouble(left_speed, 0);
-            Bluetooth_SendString(" R:");
-            Bluetooth_SendDouble(right_speed, 0);
-            Bluetooth_SendString("\r\n");
-            
-            Bluetooth_SendPID(Kp, Ki, Kd);
-            Bluetooth_Receive_PID(&Kp, &Ki, &Kd);
-            
-            error_prev = error;
-            last_time = current_time;
-            
-            HAL_Delay(20); 
-
-//            if (right_distance>10||front_distance<8)
-//              {
-//                break;
-//               }
+			double error_prev = 0.0;
+			double error_sum = 0; 
+			uint32_t last_time = 0;
+			double target_distance = 10.0;
+			uint8_t base_speed = 30; 
+			while(1)
+			{
+				//æ£€æµ‹è·ç¦»
+				right_distance = GetDistance_Right(right_distance);
+				front_distance = GetDistance_Front(front_distance);
+				//æ¨¡å¼åˆ‡æ¢
+				if(front_distance < 10.0)	//æ‘¸å¢™è°ƒå¤´
+				{
+					mode = 1;
+					break;
 				}
-			// ×ª90¡ã
+				if(right_distance > 25.0)	//å²”è·¯è°ƒå¤´
+				{
+					mode = 2;
+					break;
+				}
+				
+				//PIDæŽ§åˆ¶
+				if(right_distance > 20.0) {
+						right_distance = 20.0; // Cap the distance to avoid excessive values
+					 // Avoid negative distance
+				}
+				Bluetooth_SendString("right_distance:");
+				Bluetooth_SendDouble(right_distance, 3);
+				
+				double error = target_distance - right_distance;
+				
+				uint32_t current_time = DWT->CYCCNT;
+				double dt = (double)(current_time - last_time) / (SystemCoreClock);
+				
+				if (last_time == 0 || dt <= 0 || dt > 1.0) {
+						dt = 0.01;
+				}
+				double error_diff = (error - error_prev) / dt;
+				
+				error_sum += error * dt;
+				double error_sum_max = 50.0;
+				if (error_sum > error_sum_max) error_sum = error_sum_max;
+				if (error_sum < -error_sum_max) error_sum = -error_sum_max;
+
+				double pid_output = Kp * error + Ki * error_sum + Kd * error_diff;
+				
+				double max_correction = base_speed * 0.8;
+				if (pid_output > max_correction) pid_output = max_correction;
+				if (pid_output < -max_correction) pid_output = -max_correction;
+
+				int left_speed = base_speed + (int)pid_output;
+				int right_speed = base_speed - (int)pid_output;
+				
+				if (left_speed < 0) left_speed = 0;
+				if (right_speed < 0) right_speed = 0;
+				if (left_speed > MAX_SPEED) left_speed = MAX_SPEED;
+				if (right_speed > MAX_SPEED) right_speed = MAX_SPEED;
+				
+				int left_speed1=1.2*left_speed;//fixed motor signal
+				Motor_Left(MOTOR_FORWARD,right_speed );
+				Motor_Right(MOTOR_FORWARD, left_speed1);
+
+				Bluetooth_SendString(" Error:");
+				Bluetooth_SendDouble(error, 2);
+				Bluetooth_SendString(" L:");
+				Bluetooth_SendDouble(right_speed, 0);
+				Bluetooth_SendString(" R:");
+				Bluetooth_SendDouble(left_speed, 0);
+				Bluetooth_SendString("\r\n");
+				
+				Bluetooth_SendPID(Kp, Ki, Kd);
+				Bluetooth_Receive_PID(&Kp, &Ki, &Kd);
+				
+				error_prev = error;
+				last_time = current_time;
+				
+				HAL_Delay(20); 
+			}
+			break;
+			// æ‘¸å¢™è°ƒå¤´
 			case 1:
-				// ¿ØÖÆÖÇÄÜ³µÔÚÃÔ¹¬Â·¿Ú´¦×ªÍä
+				Motor_Left(MOTOR_STOP, 0);
+				Motor_Right(MOTOR_STOP, 0);
+				HAL_Delay(200);
+
+				Motor_Left(MOTOR_BACKWARD, 50);   
+				Motor_Right(MOTOR_FORWARD, 50);   
+				HAL_Delay(900);
+
+				Motor_Left(MOTOR_STOP, 0);
+				Motor_Right(MOTOR_STOP, 0); 
+				HAL_Delay(200);
 				
-				break;
-				
-			// µ÷Í·
-			case 2:
-				// ÓÒ×ª90¡ã
-				for(int i = 0;i <= 20;i++)
-				{
-					Motor_Right(MOTOR_STOP, 0);
-					Motor_Left(MOTOR_FORWARD, 30);
-					HAL_Delay(50);
-				}
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_STOP, 0);
-				// Ç°ÐÐÒ»¶Î¾àÀë
-				for(int i = 0;i <= 30;i++)
-				{
-					Motor_Right(MOTOR_FORWARD, 30);
-					Motor_Left(MOTOR_FORWARD, 30);
-					HAL_Delay(50);
-				}
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_STOP, 0);
-				// ÓÒ×ª90¡ã
-				for(int i = 0;i <= 20;i++)
-				{
-					Motor_Right(MOTOR_STOP, 0);
-					Motor_Left(MOTOR_FORWARD, 30);
-					HAL_Delay(50);
-				}
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_STOP, 0);
-				// Ç°ÐÐÒ»¶Î¾àÀë
-				for(int i = 0;i <= 30;i++)
-				{
-					Motor_Right(MOTOR_FORWARD, 30);
-					Motor_Left(MOTOR_FORWARD, 30);
-					HAL_Delay(50);
-				}
-				Motor_Right(MOTOR_STOP, 0);
-				Motor_Left(MOTOR_STOP, 0);
-				// ¸ü¸ÄÄ£Ê½ÎªÐÞÕýÂ·¾¶
 				mode = 0;
 				break;
-		}
+			// å²”è·¯è°ƒå¤´
+			case 2:
+				Motor_Left(MOTOR_STOP, 0);
+				Motor_Right(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// å‰è¡Œä¸€æ®µè·ç¦»
+				Motor_Right(MOTOR_FORWARD, 30);
+				Motor_Left(MOTOR_FORWARD, 30);
+				HAL_Delay(600);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// å³è½¬90Â°
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_FORWARD, 50);
+				HAL_Delay(500);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// å‰è¡Œä¸€æ®µè·ç¦»
+				Motor_Right(MOTOR_FORWARD, 30);
+				Motor_Left(MOTOR_FORWARD, 30);
+				HAL_Delay(600);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// å³è½¬90Â°
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_FORWARD, 50);
+				HAL_Delay(500);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// å‰è¡Œä¸€æ®µè·ç¦»
+				Motor_Right(MOTOR_FORWARD, 30);
+				Motor_Left(MOTOR_FORWARD, 30);
+				HAL_Delay(600);
+				Motor_Right(MOTOR_STOP, 0);
+				Motor_Left(MOTOR_STOP, 0);
+				HAL_Delay(200);
+				// åˆ‡æ¢æ¨¡å¼+
+				mode = 0;
+				break;
+		}	
 	}
   /* USER CODE END 2 */
 
